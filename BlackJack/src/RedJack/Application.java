@@ -13,31 +13,36 @@ public class Application {
 class RedJack {
 
 	ArrayList<Card> Deck = new ArrayList<Card>();
+	int punten = 0;
 	int totPunten = 0;
-	int card = 0;
-	
+	int cardIDbegin = 0;
+	int cardID = 0;
+	boolean spelAan = true;
+	boolean rondeAan = true;
+	boolean beurtAan = true;
+	boolean aas = false;
+
 	Scanner scanner = new Scanner(System.in);
 
 	public RedJack() {
 		maakDeck();
 		Collections.shuffle(Deck);
-		for (int i = 0; i < 13; i++) {
+		for (int i = 0; i < 52; i++) {
 			System.out.print(Deck.get(i).getKaartNaam() + ", ");
 		}
 		System.out.println();
-		Collections.shuffle(Deck);
+
 		spelen();
 	}
 
 	private void maakDeck() {
-		String[] suits = { "Harten", "Klaver", "Ruiten", "Schoppen" };
+		char[] suits = { '\u2665', '\u2663', '\u2666', '\u2660' };
 		String[] ranks = { "Aas", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Boer", "Vrouw", "Heer" };
 		int[] value = { 11, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10 };
 
-		// ArrayList<Card> Deck = new ArrayList<Card>();
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 13; j++) {
 
-		for (int j = 0; j < 13; j++) {
-			for (int i = 0; i < 4; i++) {
 				Deck.add(new Card(ranks[j], suits[i], value[j]));
 			}
 
@@ -46,57 +51,134 @@ class RedJack {
 	}
 
 	public void spelen() {
-		
-		boolean aan = true;
 
-		System.out.println("Om een kaart te vragen toets K.\n" + "Om te passen toets P.\n" + "Om te stoppen toets Q.");
-		while (aan == true) {
-			System.out.println("Toets K, P of Q.");
-			
-			String gebruikerInput = scanner.nextLine();
-			
-			if (gebruikerInput.equals("K") || gebruikerInput.equals("k")) {
-				kaartVragen(Deck, card);
-				card++;
-			} else if (gebruikerInput.equals("P") || gebruikerInput.equals("p")) {
-				passen();
-			} else if (gebruikerInput.equals("Q") || gebruikerInput.equals("q")) {
-				stoppen();
-				aan = false;
-			} else {
-				System.out.println("Probeer opnieuw");
-			}
+		System.out.println("Druk op enter om het spel te starten");
 
+		scanner.nextLine();
+		while (spelAan == true) {
+			ronde();
 		}
 	}
 
-	public void kaartVragen(ArrayList<Card> Deck, int card) {
-		int punten = Deck.get(card).getValue();
-		System.out.println(Deck.get(card).getKaartNaam());
+	public void ronde() {
+		Collections.shuffle(Deck);
+		rondeAan = true;
+		while (rondeAan == true) {
+			cardID = cardIDbegin;
+			beurtAan = true;
+			System.out.println("Druk op enter om de ronde te starten");
+			scanner.nextLine();
+
+			System.out.println("De speler begint met: " + Deck.get(cardID).getKaartNaam() + " & "
+					+ Deck.get(cardID + 1).getKaartNaam());
+			punten = Deck.get(cardID).getValue();
+			totPunten += punten;
+			aas();
+			cardID++;
+			punten = Deck.get((cardID)).getValue();
+			aas();
+			totPunten += punten;
+			cardID++;
+			evaluatie();
+
+			while (beurtAan == true) {
+				System.out.println("Type k voor een kaart, p om te passen of q om te stoppen met het spel.");
+				String gebruikerInput = scanner.nextLine();
+
+				if (gebruikerInput.equals("K") || gebruikerInput.equals("k")) {
+					kaartVragen(Deck, cardID);
+					cardID++;
+				} else if (gebruikerInput.equals("P") || gebruikerInput.equals("p")) {
+					passen();
+
+				} else if (gebruikerInput.equals("Q") || gebruikerInput.equals("q")) {
+					stoppen();
+				} else {
+					System.out.println("Probeer opnieuw");
+				}
+			}
+		}
+	}
+
+	private void kaartVragen(ArrayList<Card> Deck, int card) {
+		punten = Deck.get(cardID).getValue();
+		System.out.println(Deck.get(cardID).getKaartNaam());
+		aas();
 		totPunten = totPunten + punten;
-		System.out.println("De totale punten: " + totPunten);
+		evaluatie();
+	}
+
+	private void eindeRonde() {
+		totPunten = 0;
+		cardIDbegin = cardID + 1;
+		beurtAan = false;
+		aas = false;
+	}
+
+	private void aas() {
+		if (Deck.get(cardID).getValue() == 11) {
+			aas = true;
+			
+		}
+
+		if (aas == true) {
+			if (totPunten + punten == 21) {
+				//evaluatie();
+			}
+			else if (totPunten + punten > 22) {
+				totPunten = totPunten - 10;
+				aas = false;
+			}
+			else if (totPunten + punten <= 20){
+				punten = 11;
+			}
+		}
+
 	}
 
 	private void passen() {
-		card--;
-		for (int i = 0; i <= card; i++) {
+		System.out.print("\nDe speler past met: ");
+		for (int i = cardIDbegin; i <= (cardID - 1); i++) {
 			System.out.print(Deck.get(i).getKaartNaam() + " ");
+
 		}
-		System.out.println("\nGepast, de totale punten: " + totPunten);
+		System.out.println("\nDe waarde van deze kaarten zijn: " + totPunten);
+		if (totPunten <= 21) {
+			System.out.println("De speler heeft gewonnen.\n");
+		} else if (totPunten > 21) {
+			System.out.println("De speler heeft verloren.\n");
+
+		}
+		eindeRonde();
 	}
 
 	private void stoppen() {
+		beurtAan = false;
+		rondeAan = false;
+		spelAan = false;
 		System.out.println("U bent gestopt.");
 	}
 
+	private void evaluatie() {
+		System.out.println("De waarde van deze kaarten zijn: " + totPunten);
+		/*if (totPunten < 21) {
+			System.out.println("De speler kan door spelen\n");
+		} else */if (totPunten > 21) {
+			System.out.println("De speler heeft verloren.\n");
+			eindeRonde();
+		} else if (totPunten == 21) {
+			System.out.println("Blackjack! De speler heeft gewonnen.\n");
+			eindeRonde();
+		}
+	}
 }
 
 class Card {
 	String rank;
-	String type;
+	char type;
 	int value;
 
-	Card(String rank, String type, int value) {
+	Card(String rank, char type, int value) {
 		this.rank = rank;
 		this.type = type;
 		this.value = value;
@@ -104,10 +186,11 @@ class Card {
 	}
 
 	public String getKaartNaam() {
-		return this.type + " " + this.rank;
+		return this.type + this.rank;
 	}
 
 	public int getValue() {
+
 		return this.value;
 	}
 }
